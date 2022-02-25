@@ -7,6 +7,15 @@ use Illuminate\Http\Request;
 
 class ComicController extends Controller
 {
+
+    protected $ruleValidation =  [
+        'title' => 'required|max:40',
+        'author' => 'required|max:40',
+        'genre' => 'required|max:50',
+        'price' => 'required|numeric',
+        'description' => 'nullable|',
+        'photo' => 'nullable|max:255',
+    ];
     /**
      * Display a listing of the resource.
      *
@@ -14,7 +23,7 @@ class ComicController extends Controller
      */
     public function index()
     {
-        $comics = Comic::paginate(18);
+        $comics = Comic::orderBy('updated_at', 'desc')->paginate(18);
         // dd($comic);
         $data=[
             'comics'=> $comics
@@ -40,6 +49,7 @@ class ComicController extends Controller
      */
     public function store(Request $request)
     {
+        $validateData = $request->validate($this->ruleValidation);
         $data =$request->all();
         $comic = new Comic();
         $comic->fill($data);
@@ -49,7 +59,8 @@ class ComicController extends Controller
             dd('non Corretto');
 
         }
-        return redirect()->route('comics.show', $comic->id);
+        return redirect()->route('comics.show', $comic->id)
+        ->with('status', "Comic $comic->title Saved!");
     }
 
     /**
@@ -87,12 +98,14 @@ class ComicController extends Controller
      */
     public function update(Request $request, Comic $comic)
     {
+        $validateData = $request->validate($this->ruleValidation);
         $data = $request->all();
         $updated = $comic->update($data);
         if(!$updated){
             dd('update non riuscito');
         }
-        return redirect()->route('comics.show', $comic->id);
+        return redirect()->route('comics.show', $comic->id)
+        ->with('status', "Comic $comic->title Saved!");
     }
 
     /**
@@ -103,6 +116,10 @@ class ComicController extends Controller
      */
     public function destroy(Comic $comic)
     {
-        //
+        $comic->delete();
+
+        return redirect()
+            ->route('comics.index')
+            ->with('status', "Comic $comic->title deleted!");
     }
 }
